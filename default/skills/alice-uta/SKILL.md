@@ -46,6 +46,20 @@ alice-uta contract expand --help       # expand a directory-style result (chains
 - **Resolve the contract before any order** (`contract search` →
   `contract details`) — never guess a symbol's broker-native identity.
 
+## Size before you place
+
+```bash
+alice-uta plan size --help             # advisory position sizing
+```
+
+- **`plan size`** computes how much to buy from account equity + stop
+  distance: fixed-fractional risk (default 1% per trade), position-% and
+  portfolio-heat caps, optional fractional-Kelly cap from backtest stats.
+  Works from an `accountId` or explicit `equity`/`currency` (a GBP-denominated
+  user trading USD instruments passes `currency GBP` — output shows risk in
+  both currencies). Advisory only — the guard pipeline still enforces at push
+  time. Reuse its stop as the order's TP/SL stop.
+
 ## Place / modify / cancel orders
 
 ```bash

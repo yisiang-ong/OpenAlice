@@ -83,6 +83,8 @@ export {
   MaxPositionSizeGuard,
   CooldownGuard,
   SymbolWhitelistGuard,
+  MaxDrawdownGuard,
+  DailyLossLimitGuard,
 } from './guards/index.js'
 export type {
   GuardContext,

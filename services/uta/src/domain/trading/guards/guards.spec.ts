@@ -36,10 +36,12 @@ function makeContext(overrides: {
   operation?: Operation
   positions?: Position[]
   account?: Partial<AccountInfo>
+  accountId?: string
 } = {}): GuardContext {
   return {
     operation: overrides.operation ?? makePlaceOrderOp(),
     positions: overrides.positions ?? [],
+    accountId: overrides.accountId ?? 'test-account',
     account: {
       baseCurrency: 'USD',
       netLiquidation: '100000',
@@ -277,6 +279,16 @@ describe('resolveGuards', () => {
     expect(guards).toHaveLength(2)
     expect(guards[0].name).toBe('max-position-size')
     expect(guards[1].name).toBe('symbol-whitelist')
+  })
+
+  it('resolves max-drawdown and daily-loss-limit builtin types', () => {
+    const guards = resolveGuards([
+      { type: 'max-drawdown', options: { maxDrawdownPct: 10 } },
+      { type: 'daily-loss-limit', options: { maxDailyLossPct: 3 } },
+    ])
+    expect(guards).toHaveLength(2)
+    expect(guards[0].name).toBe('max-drawdown')
+    expect(guards[1].name).toBe('daily-loss-limit')
   })
 
   it('skips unknown guard types with a warning', () => {

@@ -6,6 +6,8 @@ export interface GuardContext {
   readonly operation: Operation
   readonly positions: readonly Position[]
   readonly account: Readonly<AccountInfo>
+  /** Unique account/broker ID (IBroker.id) — used by guards that persist per-account state. */
+  readonly accountId: string
 }
 
 /** A guard that can reject operations. Returns null to allow, or a rejection reason string. */

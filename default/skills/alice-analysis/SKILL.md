@@ -106,6 +106,18 @@ the full workflow):
   `hold`); returns entry/exit, returnPct, MFE/MAE.
 - **`alice analysis quant … --dates`** — opt-in date axis on a quant result
   (`dates[barId]`), to map a dumped series back to days.
+- **`alice analysis signals --query AAPL --signal ma_cross --fast 20 --slow 50`**
+  — dated entry-signal events: crossings (`ma_cross`, `rsi_cross`,
+  `macd_cross`), volume-confirmed `breakout`/`breakdown`, and regime states
+  (`trend_filter`, `high_52w_proximity`). This is the crossover/boolean layer
+  the quant language deliberately lacks; each event carries citation-grade
+  context ("EMA20 crossed above EMA50 on 2026-07-01, RVOL 2.1").
+- **`alice analysis backtest --query AAPL --signal ma_cross --fast 20 --slow 50
+  --stopType atr --stopMult 2 --targetR 2`** — replay every historical firing
+  of a signal spec through a stop/target bracket (intrabar, stop wins ties,
+  non-overlapping): n, win rate, avg R, expectancy — the trade card's
+  "historical edge" line. Small samples (n<10) come back flagged; quote the
+  flag.
 
 ## Function catalog
 

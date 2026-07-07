@@ -15,6 +15,8 @@ import { createEconomyTools } from '../tool/economy.js'
 import { createQuantTools } from '../tool/quant.js'
 import { createSnapshotTools } from '../tool/snapshot.js'
 import { createSimulateTools } from '../tool/simulate.js'
+import { createSignalTools } from '../tool/signal.js'
+import { createPositionSizeTools } from '../tool/position-size.js'
 import { createThinkingTools } from '../tool/thinking.js'
 import { inboxPushFactory } from '../tool/inbox-push.js'
 import { inboxReadFactory } from '../tool/inbox-read.js'
@@ -42,6 +44,7 @@ describe('CLI_EXPORTS — data export (global tools)', () => {
   tc.register(createQuantTools(any), 'quant')
   tc.register(createSnapshotTools(any), 'snapshot')
   tc.register(createSimulateTools(any), 'simulate')
+  tc.register(createSignalTools(any), 'signal')
   tc.register(createEconomyTools(any, any), 'economy')
 
   it('every mapped verb resolves to a registered global tool', () => {
@@ -58,6 +61,7 @@ describe('CLI_EXPORTS — data export (global tools)', () => {
 describe('CLI_EXPORTS — uta export (global trading tools)', () => {
   const tc = new ToolCenter()
   tc.register(createTradingTools(any), 'trading')
+  tc.register(createPositionSizeTools(any), 'trading-plan')
 
   it('every mapped verb resolves to a registered trading tool', () => {
     for (const name of mappedToolNames('uta')) {

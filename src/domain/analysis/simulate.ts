@@ -13,6 +13,27 @@
  *   target(pct)         exit when close rises `pct`% above entry
  *   hold                never exit — measure entry → asOf
  *
+ * A second exit rule, `bracket`, was added later and DELIBERATELY diverges
+ * from the close-based semantics above:
+ *
+ *   bracket(stopPct, targetPct, maxBars?)
+ *     stop level   = entry × (1 − stopPct/100)
+ *     target level = entry × (1 + targetPct/100)
+ *     Checked from the bar AFTER entry using INTRABAR extremes (not close):
+ *       bar.low  <= stop level   → exit AT THE STOP LEVEL,   reason 'stop'
+ *       bar.high >= target level → exit AT THE TARGET LEVEL, reason 'target'
+ *     If a single bar touches BOTH levels, the STOP WINS (conservative —
+ *     we don't know intrabar path order from OHLC alone, so assume the worse
+ *     outcome rather than credit an ambiguous target fill).
+ *     maxBars: if neither level is hit within N bars past entry, exit at that
+ *     bar's CLOSE, reason 'time'.
+ *   The other four rules are intentionally close-only (matches "would a
+ *   headline-driven retro trade have survived on daily closes") — bracket
+ *   exists because a real stop/target order fills intrabar, not at the close,
+ *   and callers that want realistic stop/target fills should reach for it
+ *   instead of close-based `stop`/`target`. Same no-lookahead walking idiom as
+ *   the other rules: checks start at the bar AFTER entry.
+ *
  * Reports entry/exit (date·price·reason), return, MFE/MAE (max favorable/adverse
  * excursion), peak/trough, and a sampled path to narrate. Lives in
  * domain/analysis (analysis → market-data dependency direction).
@@ -26,6 +47,7 @@ export type ExitRule =
   | { type: 'stop'; pct: number }
   | { type: 'target'; pct: number }
   | { type: 'hold' }
+  | { type: 'bracket'; stopPct: number; targetPct: number; maxBars?: number }
 
 export interface SimulateOpts {
   /** Enter at the close of the first bar on/after this date (YYYY-MM-DD). */
@@ -124,6 +146,7 @@ export async function simulate(
     // exit checks evaluate from the bar AFTER entry (you can't exit the bar you enter on the close of)
     if (i === entryIdx) continue
     let reason: string | null = null
+    let exitPriceThisBar = b.close
     switch (rule.type) {
       case 'trailing_stop':
         if (b.close <= peakClose * (1 - rule.pct / 100)) reason = `close ${px(b.close)} fell ${rule.pct}% from peak ${px(peakClose)}`
@@ -141,9 +164,28 @@ export async function simulate(
         break
       case 'hold':
         break
+      case 'bracket': {
+        // Intrabar, stop-wins-on-tie semantics — see file header. Distinct
+        // from stop/target above (which are close-based).
+        const stopLevel = entryPrice * (1 - rule.stopPct / 100)
+        const targetLevel = entryPrice * (1 + rule.targetPct / 100)
+        const hitStop = b.low <= stopLevel
+        const hitTarget = b.high >= targetLevel
+        if (hitStop) {
+          reason = `low ${px(b.low)} hit −${rule.stopPct}% stop at ${px(stopLevel)}`
+          exitPriceThisBar = stopLevel
+        } else if (hitTarget) {
+          reason = `high ${px(b.high)} hit +${rule.targetPct}% target at ${px(targetLevel)}`
+          exitPriceThisBar = targetLevel
+        } else if (rule.maxBars != null && i - entryIdx >= rule.maxBars) {
+          reason = `no stop/target hit within ${rule.maxBars} bars; time exit at close`
+          exitPriceThisBar = b.close
+        }
+        break
+      }
     }
     if (reason) {
-      exit = { date: b.date, price: px(b.close), reason }
+      exit = { date: b.date, price: px(exitPriceThisBar), reason }
       break
     }
   }

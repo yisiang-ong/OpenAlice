@@ -2,11 +2,15 @@ import type { OperationGuard, GuardRegistryEntry } from './types.js'
 import { MaxPositionSizeGuard } from './max-position-size.js'
 import { CooldownGuard } from './cooldown.js'
 import { SymbolWhitelistGuard } from './symbol-whitelist.js'
+import { MaxDrawdownGuard } from './max-drawdown.js'
+import { DailyLossLimitGuard } from './daily-loss-limit.js'
 
 const builtinGuards: GuardRegistryEntry[] = [
   { type: 'max-position-size', create: (opts) => new MaxPositionSizeGuard(opts) },
   { type: 'cooldown',          create: (opts) => new CooldownGuard(opts) },
   { type: 'symbol-whitelist',  create: (opts) => new SymbolWhitelistGuard(opts) },
+  { type: 'max-drawdown',      create: (opts) => new MaxDrawdownGuard(opts) },
+  { type: 'daily-loss-limit',  create: (opts) => new DailyLossLimitGuard(opts) },
 ]
 
 const registry = new Map<string, GuardRegistryEntry['create']>(

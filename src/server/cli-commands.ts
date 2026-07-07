@@ -74,6 +74,12 @@ export const CLI_EXPORTS: Record<string, CliExport> = {
         // path-dependent backtest. The Retrospective / Time-Machine primitives.
         snapshot: 'marketSnapshot',
         simulate: 'simulate',
+        // Entry-signal layer: `signals` finds dated crossings/breakouts (the
+        // crossover logic calc-v2 deliberately lacks); `backtest` replays every
+        // historical firing of a signal spec through a stop/target bracket and
+        // reports win rate + expectancy — the trade card's "historical edge" line.
+        signals: 'detectSignals',
+        backtest: 'backtestSignal',
       },
       think: {
         calc: 'calculate',
@@ -223,6 +229,12 @@ export const CLI_EXPORTS: Record<string, CliExport> = {
       },
       market: {
         clock: 'getMarketClock',
+      },
+      // Pre-trade planning: advisory position sizing from account equity +
+      // stop distance (fixed-fractional risk, position/heat/Kelly caps).
+      // Advisory only — the guard pipeline still enforces at push time.
+      plan: {
+        size: 'positionSize',
       },
       // MockBroker simulator only — no-op against real brokers.
       sim: {

@@ -24,6 +24,7 @@ Exit rules (pass exitRule + its param):
   - stop           exitPct=N   → exit when close falls N% below entry
   - target         exitPct=N   → exit when close rises N% above entry
   - hold                        → never exit; measure entry → asOf
+  - bracket        exitPct=stopPct, targetPct=N, maxBars=N (optional) → intrabar stop/target: exits at the STOP LEVEL if a bar's low touches entry×(1−stopPct/100), or the TARGET LEVEL if its high touches entry×(1+targetPct/100); if one bar touches both, the STOP WINS (conservative). Without maxBars the position can stay open past asOf; with it, an untouched trade exits at that bar's close after maxBars, reason 'time'.
 
 Returns entry/exit (date·price·reason), returnPct, MFE/MAE (max favorable/adverse excursion %), peak/trough, and a sampled path. open=true means no exit triggered by asOf (return is mark-to-market). Source: a barId pins one; a bare symbol/query auto-picks the freshest (realtime broker > delayed vendor).`,
       inputSchema: z.object({
@@ -31,13 +32,15 @@ Returns entry/exit (date·price·reason), returnPct, MFE/MAE (max favorable/adve
         barId: z.string().optional().describe('Pin a source, e.g. "alpaca-paper|XLE". Wins over query.'),
         asset: z.enum(['equity', 'crypto', 'currency', 'commodity']).optional().describe('Needed only for a VENDOR barId/symbol.'),
         entryDate: z.string().describe('Enter at the close of the first bar on/after this date (YYYY-MM-DD).'),
-        exitRule: z.enum(['trailing_stop', 'ma_break', 'stop', 'target', 'hold']).describe('Which built-in exit.'),
-        exitPct: z.number().positive().optional().describe('Percent for trailing_stop / stop / target.'),
+        exitRule: z.enum(['trailing_stop', 'ma_break', 'stop', 'target', 'hold', 'bracket']).describe('Which built-in exit.'),
+        exitPct: z.number().positive().optional().describe('Percent for trailing_stop / stop / target. Also doubles as the stop percent for bracket.'),
         exitPeriod: z.number().int().positive().optional().describe('SMA period for ma_break.'),
+        targetPct: z.number().positive().optional().describe('bracket: target percent above entry.'),
+        maxBars: z.number().int().positive().optional().describe('bracket: force a time exit at close after this many bars if neither stop nor target hit.'),
         interval: z.string().optional().describe('Bar interval (default "1d").'),
         asOf: z.string().optional().describe('Evaluate up to here (YYYY-MM-DD). Default: now.'),
       }).meta({ examples: [{ query: 'XLE', entryDate: '2026-04-01', exitRule: 'trailing_stop', exitPct: 8 }] }),
-      execute: async ({ query, barId, asset, entryDate, exitRule, exitPct, exitPeriod, interval, asOf }) => {
+      execute: async ({ query, barId, asset, entryDate, exitRule, exitPct, exitPeriod, targetPct, maxBars, interval, asOf }) => {
         // Build the exit rule from flat params, validating the required param.
         let exit: ExitRule
         switch (exitRule) {
@@ -51,6 +54,10 @@ Returns entry/exit (date·price·reason), returnPct, MFE/MAE (max favorable/adve
             break
           case 'hold':
             exit = { type: 'hold' }
+            break
+          case 'bracket':
+            if (exitPct == null || targetPct == null) return { error: 'exitRule "bracket" needs exitPct (used as the stop percent) and targetPct.' }
+            exit = { type: 'bracket', stopPct: exitPct, targetPct, ...(maxBars != null ? { maxBars } : {}) }
             break
         }
 

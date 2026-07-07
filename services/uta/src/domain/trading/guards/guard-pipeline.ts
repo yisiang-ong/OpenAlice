@@ -23,7 +23,7 @@ export function createGuardPipeline(
       account.getAccount(),
     ])
 
-    const ctx: GuardContext = { operation: op, positions, account: accountInfo }
+    const ctx: GuardContext = { operation: op, positions, account: accountInfo, accountId: account.id }
 
     for (const guard of guards) {
       const rejection = await guard.check(ctx)

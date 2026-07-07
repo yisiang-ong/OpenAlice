@@ -109,6 +109,17 @@ describe('computePositionSize', () => {
     expect(r.binding).toBe('risk')
   })
 
+  it('case 4d — 100% wins that won nothing (p=1, b=0 → k=NaN) skips the cap loudly, never emits "NaN"', () => {
+    const r = computePositionSize({
+      equity: '20000', accountCurrency: 'USD', fxRateToUsd: '1',
+      entryPrice: '100', stopPrice: '95', side: 'long',
+      kelly: { winRatePct: 100, avgWinR: 0, avgLossR: 1 },
+    })
+    expect(r.caps.kellyCapQty).toBeUndefined() // no "NaN" string in the output
+    expect(r.binding).toBe('risk')
+    expect(r.warnings.some((w) => w.includes('degenerate'))).toBe(true)
+  })
+
   it('case 6b — targetRs with no positive finite entries falls back to [1, 2, 3] with a warning', () => {
     const r = computePositionSize({
       equity: '20000', accountCurrency: 'USD', fxRateToUsd: '1',

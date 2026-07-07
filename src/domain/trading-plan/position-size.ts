@@ -135,10 +135,17 @@ export function computePositionSize(input: PositionSizeInput): PositionSizeResul
       const p = winRatePct / 100
       const b = avgWinR / avgLossR // avgLossR 0 with wins > 0 → b = Infinity → k = p (no-loss sample)
       const k = p - (1 - p) / b
-      const kellyRiskPct = Math.max(0, k) * fraction * 100
-      kellyCapQty = equityUsd.mul(kellyRiskPct).div(100).div(stopDistance)
-      if (k <= 0) {
-        warnings.push('backtest stats imply negative edge — Kelly says size 0')
+      // k = -Infinity (never wins money) is a legitimate "size 0"; k = NaN
+      // (p=1 with b=0 → 0/0) is not a number at all — skip loudly, because a
+      // NaN silently fails every comparison below and would emit a "NaN" cap.
+      if (Number.isNaN(k)) {
+        warnings.push('Kelly inputs are degenerate (100% wins that won nothing) — Kelly cap skipped; do not size off this backtest')
+      } else {
+        const kellyRiskPct = Math.max(0, k) * fraction * 100
+        kellyCapQty = equityUsd.mul(kellyRiskPct).div(100).div(stopDistance)
+        if (k <= 0) {
+          warnings.push('backtest stats imply negative edge — Kelly says size 0')
+        }
       }
     }
   }

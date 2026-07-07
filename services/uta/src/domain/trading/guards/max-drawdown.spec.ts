@@ -121,6 +121,31 @@ describe('MaxDrawdownGuard', () => {
     expect(result).toBeNull()
   })
 
+  it('still blocks an opposite-action order on a DIFFERENT instrument sharing the symbol (AAPL options vs AAPL stock)', async () => {
+    const guard = new MaxDrawdownGuard({ baseDir: tmpDir, maxDrawdownPct: 10 })
+    await guard.check(makeContext({ account: { netLiquidation: '20000' } })) // seed HWM
+
+    // Long 10 AAPL shares; the order SELLS 5 AAPL CALLS — a naked write, new
+    // risk with a 100x multiplier, NOT a reduction of the stock position.
+    const positions = [makePosition({ contract: makeContract({ symbol: 'AAPL', secType: 'STK', aliceId: 'mock-paper|AAPL' }), side: 'long', quantity: new Decimal(10) })]
+    const order = new Order()
+    order.action = 'SELL'
+    order.orderType = 'LMT'
+    order.totalQuantity = new Decimal(5)
+    const optOp: Operation = {
+      action: 'placeOrder',
+      contract: makeContract({ symbol: 'AAPL', secType: 'OPT', aliceId: 'mock-paper|AAPL-C-260918-250' }),
+      order,
+    }
+
+    const result = await guard.check(makeContext({
+      operation: optOp,
+      positions,
+      account: { netLiquidation: '17000' }, // 15% down — guard is tripped
+    }))
+    expect(result).not.toBeNull()
+  })
+
   it('still blocks a sell LARGER than the position (it flips into new short risk)', async () => {
     const guard = new MaxDrawdownGuard({ baseDir: tmpDir, maxDrawdownPct: 10 })
     await guard.check(makeContext({ account: { netLiquidation: '20000' } })) // seed HWM

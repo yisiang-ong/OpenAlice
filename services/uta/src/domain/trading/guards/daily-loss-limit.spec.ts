@@ -3,11 +3,12 @@ import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Decimal from 'decimal.js'
+import { Order } from '@traderalice/ibkr'
 import { DailyLossLimitGuard } from './daily-loss-limit.js'
 import type { GuardContext } from './types.js'
 import type { Operation } from '../git/types.js'
 import type { AccountInfo, Position } from '../brokers/types.js'
-import { makeContract } from '../brokers/mock/index.js'
+import { makeContract, makePosition } from '../brokers/mock/index.js'
 import '../contract-ext.js'
 
 function makePlaceOrderOp(): Operation {
@@ -101,6 +102,48 @@ describe('DailyLossLimitGuard', () => {
     const closeOp: Operation = { action: 'closePosition', contract: makeContract({ symbol: 'AAPL' }) }
     const result = await guard.check(makeContext({ operation: closeOp, account: { netLiquidation: '19000' } }))
     expect(result).toBeNull()
+  })
+
+  it('charges an overnight gap to today: rollover anchors at YESTERDAY\'S last-known equity', async () => {
+    const guard = new DailyLossLimitGuard({ baseDir: tmpDir, maxDailyLossPct: 3 })
+    // Yesterday's last check saw 20000; positions gapped down overnight to 18400 (-8%).
+    await writeFile(join(tmpDir, 'day-anchor.json'), JSON.stringify({ date: '2000-01-01', equity: '20000', lastEquity: '20000' }), 'utf-8')
+
+    const result = await guard.check(makeContext({ account: { netLiquidation: '18400' } }))
+    expect(result).not.toBeNull() // the FIRST order of the day does not get a free pass
+    expect(result).toContain('8.0%')
+
+    const state = JSON.parse(await readFile(join(tmpDir, 'day-anchor.json'), 'utf-8'))
+    expect(state.date).toBe(todayUtc())
+    expect(new Decimal(state.equity).toString()).toBe('20000') // anchored at yesterday's last equity
+  })
+
+  it('allows a risk-REDUCING sell (exit against an existing long) while blocked', async () => {
+    const guard = new DailyLossLimitGuard({ baseDir: tmpDir, maxDailyLossPct: 3 })
+    await guard.check(makeContext({ account: { netLiquidation: '20000' } })) // seed anchor
+
+    const order = new Order()
+    order.action = 'SELL'
+    order.orderType = 'LMT'
+    order.totalQuantity = new Decimal(5)
+    const sellOp: Operation = { action: 'placeOrder', contract: makeContract({ symbol: 'AAPL' }), order }
+    const positions = [makePosition({ contract: makeContract({ symbol: 'AAPL' }), side: 'long', quantity: new Decimal(10) })]
+
+    const result = await guard.check(makeContext({
+      operation: sellOp,
+      positions,
+      account: { netLiquidation: '19000' }, // 5% down — guard is tripped
+    }))
+    expect(result).toBeNull()
+  })
+
+  it('a non-numeric maxDailyLossPct falls back to the default and the guard STAYS ACTIVE', async () => {
+    const guard = new DailyLossLimitGuard({ baseDir: tmpDir, maxDailyLossPct: '3%' })
+    await guard.check(makeContext({ account: { netLiquidation: '20000' } })) // seed anchor
+
+    const result = await guard.check(makeContext({ account: { netLiquidation: '19000' } })) // 5% down
+    expect(result).not.toBeNull() // default 3% limit enforced, not silently disabled
+    expect(result).toContain('3%')
   })
 
   it('self-heals from a corrupt state file by reseeding', async () => {

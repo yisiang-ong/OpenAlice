@@ -85,6 +85,41 @@ describe('computePositionSize', () => {
     expect(r.warnings).toContain('backtest stats imply negative edge — Kelly says size 0')
   })
 
+  it('case 4b — degenerate Kelly inputs (an empty backtest\'s all-zero stats) skip the cap loudly instead of going NaN-silent', () => {
+    const r = computePositionSize({
+      equity: '20000', accountCurrency: 'USD', fxRateToUsd: '1',
+      entryPrice: '100', stopPrice: '95', side: 'long',
+      kelly: { winRatePct: 0, avgWinR: 0, avgLossR: 0 }, // EMPTY_STATS shape from an n=0 backtest
+    })
+    expect(r.caps.kellyCapQty).toBeUndefined() // no "NaN" string in the output
+    expect(r.binding).toBe('risk') // sizing still works off the other caps
+    expect(r.qty).toBe('40')
+    expect(r.warnings.some((w) => w.includes('degenerate'))).toBe(true)
+  })
+
+  it('case 4c — a no-loss sample (avgLossR 0, wins present) caps at fractional-Kelly of the win rate, no NaN', () => {
+    const r = computePositionSize({
+      equity: '20000', accountCurrency: 'USD', fxRateToUsd: '1',
+      entryPrice: '100', stopPrice: '95', side: 'long',
+      kelly: { winRatePct: 100, avgWinR: 2, avgLossR: 0 }, // small all-win sample
+    })
+    // b = Infinity -> k = p = 1 -> quarter-Kelly 25% risk: far looser than the
+    // 1% risk cap, so it never binds — but it must be a real number, not NaN.
+    expect(r.caps.kellyCapQty).toBe('1000')
+    expect(r.binding).toBe('risk')
+  })
+
+  it('case 6b — targetRs with no positive finite entries falls back to [1, 2, 3] with a warning', () => {
+    const r = computePositionSize({
+      equity: '20000', accountCurrency: 'USD', fxRateToUsd: '1',
+      entryPrice: '100', stopPrice: '95', side: 'long',
+      targetRs: [],
+    })
+    expect(r.targets.map((t) => t.r)).toEqual([1, 2, 3])
+    expect(r.rrAtFirstTarget).toBe('1') // not the string "undefined"
+    expect(r.warnings.some((w) => w.includes('targetRs'))).toBe(true)
+  })
+
   it('case 5 — portfolio heat block', () => {
     const r = computePositionSize({
       equity: '20000', accountCurrency: 'GBP', fxRateToUsd: '1.27',

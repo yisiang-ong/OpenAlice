@@ -52,6 +52,18 @@ describe('positionSize tool', () => {
     expect(r.qty).toBe('10')
   })
 
+  it('errors (instead of returning qty "NaN") when the account reports a blank netLiquidation', async () => {
+    const manager = {
+      resolveOne: async () => ({
+        getAccount: async () => ({ baseCurrency: 'USD', netLiquidation: '', totalCashValue: '0', unrealizedPnL: '0' }),
+      }),
+    } as unknown as UTAManagerSDK
+    const { positionSize } = createPositionSizeTools({ manager })
+    const r = (await positionSize.execute!({ accountId: 'alpaca-paper', entryPrice: 100, stopPrice: 90 }, ctx)) as { error?: string; qty?: string }
+    expect(r.qty).toBeUndefined()
+    expect(r.error).toMatch(/non-positive equity/)
+  })
+
   it('FX-unavailable path returns {error} when the currency client throws and no fxRate override is given', async () => {
     const currencyClient = {
       getSnapshots: async () => { throw new Error('vendor down') },

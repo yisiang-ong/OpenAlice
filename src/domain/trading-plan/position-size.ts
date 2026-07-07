@@ -98,7 +98,6 @@ export function computePositionSize(input: PositionSizeInput): PositionSizeResul
   const maxPositionPct = input.maxPositionPct ?? 25
   const maxPortfolioHeatPct = input.maxPortfolioHeatPct ?? 5
   const fractional = input.fractional ?? false
-  const targetRs = input.targetRs ?? [1, 2, 3]
 
   const fx = new Decimal(input.fxRateToUsd)
   const equity = new Decimal(input.equity)
@@ -111,18 +110,36 @@ export function computePositionSize(input: PositionSizeInput): PositionSizeResul
 
   const warnings: string[] = []
 
+  // ---- targetRs: default [1,2,3]; drop non-positive/non-finite entries ----
+  const targetRsInput = (input.targetRs ?? []).filter((r) => Number.isFinite(r) && r > 0)
+  if (input.targetRs != null && targetRsInput.length === 0) {
+    warnings.push('targetRs had no positive finite entries — using default [1, 2, 3]')
+  }
+  const targetRs = targetRsInput.length > 0 ? targetRsInput : [1, 2, 3]
+
   // ---- Kelly (optional) ----
   let kellyCapQty: Decimal | undefined
   if (input.kelly) {
     const { winRatePct, avgWinR, avgLossR } = input.kelly
     const fraction = input.kelly.fraction ?? 0.25
-    const p = winRatePct / 100
-    const b = avgWinR / avgLossR
-    const k = p - (1 - p) / b
-    const kellyRiskPct = Math.max(0, k) * fraction * 100
-    kellyCapQty = equityUsd.mul(kellyRiskPct).div(100).div(stopDistance)
-    if (k <= 0) {
-      warnings.push('backtest stats imply negative edge — Kelly says size 0')
+    // An n=0 backtest reports all-zero stats; 0/0 → NaN would make the Kelly
+    // cap silently inert AND skip the negative-edge warning. Degenerate or
+    // out-of-range inputs skip the cap loudly instead.
+    const degenerate =
+      !Number.isFinite(winRatePct) || !Number.isFinite(avgWinR) || !Number.isFinite(avgLossR) ||
+      winRatePct < 0 || winRatePct > 100 || avgWinR < 0 || avgLossR < 0 ||
+      (avgWinR === 0 && avgLossR === 0)
+    if (degenerate) {
+      warnings.push('Kelly inputs are degenerate (e.g. an empty backtest\'s all-zero stats) — Kelly cap skipped; do not size off this backtest')
+    } else {
+      const p = winRatePct / 100
+      const b = avgWinR / avgLossR // avgLossR 0 with wins > 0 → b = Infinity → k = p (no-loss sample)
+      const k = p - (1 - p) / b
+      const kellyRiskPct = Math.max(0, k) * fraction * 100
+      kellyCapQty = equityUsd.mul(kellyRiskPct).div(100).div(stopDistance)
+      if (k <= 0) {
+        warnings.push('backtest stats imply negative edge — Kelly says size 0')
+      }
     }
   }
 

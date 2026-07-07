@@ -24,7 +24,7 @@ Exit rules (pass exitRule + its param):
   - stop           exitPct=N   → exit when close falls N% below entry
   - target         exitPct=N   → exit when close rises N% above entry
   - hold                        → never exit; measure entry → asOf
-  - bracket        exitPct=stopPct, targetPct=N, maxBars=N (optional) → intrabar stop/target: exits at the STOP LEVEL if a bar's low touches entry×(1−stopPct/100), or the TARGET LEVEL if its high touches entry×(1+targetPct/100); if one bar touches both, the STOP WINS (conservative). Without maxBars the position can stay open past asOf; with it, an untouched trade exits at that bar's close after maxBars, reason 'time'.
+  - bracket        exitPct=stopPct, targetPct=N, maxBars=N (optional) → intrabar stop/target: exits at the STOP LEVEL if a bar's low touches entry×(1−stopPct/100), or the TARGET LEVEL if its high touches entry×(1+targetPct/100); if one bar touches both, the STOP WINS (conservative). GAP RULE: a bar that OPENS beyond a level fills at the OPEN (a gap through the stop books the real, worse fill — losses can exceed the stop percent). Without maxBars the position can stay open past asOf; with it, an untouched trade exits at that bar's close after maxBars, reason 'time'.
 
 Returns entry/exit (date·price·reason), returnPct, MFE/MAE (max favorable/adverse excursion %), peak/trough, and a sampled path. open=true means no exit triggered by asOf (return is mark-to-market). Source: a barId pins one; a bare symbol/query auto-picks the freshest (realtime broker > delayed vendor).`,
       inputSchema: z.object({

@@ -3,13 +3,14 @@ import { backtestSignal } from './backtest.js'
 import { atrSeries } from './rolling.js'
 import type { DetectBar } from './detect.js'
 
-function makeBars(closes: number[], opts?: { highs?: number[]; lows?: number[]; volumes?: number[] }): DetectBar[] {
+function makeBars(closes: number[], opts?: { opens?: number[]; highs?: number[]; lows?: number[]; volumes?: number[] }): DetectBar[] {
+  const opens = opts?.opens ?? closes
   const highs = opts?.highs ?? closes
   const lows = opts?.lows ?? closes
   const volumes = opts?.volumes ?? closes.map(() => 1000)
   return closes.map((c, i) => ({
     date: `2024-01-${String(i + 1).padStart(2, '0')}`,
-    open: c,
+    open: opens[i],
     high: highs[i],
     low: lows[i],
     close: c,
@@ -78,6 +79,35 @@ describe('backtestSignal — pct stop, hand-computed R values', () => {
     expect(t.rMultiple).toBe(0) // flat exit
     expect(t.barsHeld).toBe(2)
     expect(r.stats.wins).toBe(0) // R = 0 counts as a non-win
+  })
+})
+
+describe('backtestSignal — gap fills at the open', () => {
+  it('a bar that OPENS below the stop fills at the open — the loss exceeds -1R', () => {
+    const closes = [10, 10, 10, 20, 15, 15, 15]
+    const opens = [10, 10, 10, 20, 15, 15, 15] // idx4 gaps open at 15, through the 18 stop
+    const lows = [10, 10, 10, 20, 14, 15, 15]
+    const r = backtestSignal(makeBars(closes, { opens, lows }), {
+      signal: GOLDEN, stop: { type: 'pct', pct: 10 }, targetR: 2,
+    })
+
+    const t = r.trades[0]
+    expect(t.reason).toBe('stop')
+    expect(t.exitPrice).toBe(15) // the OPEN, not a flattering fill at the 18 level
+    expect(t.rMultiple).toBe(-2.5) // (15 - 20) / 2 — worse than -1R, as a real gap is
+  })
+
+  it('a bar that OPENS above the target fills at the (better) open', () => {
+    const closes = [10, 10, 10, 20, 26, 26, 26]
+    const opens = [10, 10, 10, 20, 26, 26, 26] // idx4 gaps open at 26, above the 24 target
+    const r = backtestSignal(makeBars(closes, { opens }), {
+      signal: GOLDEN, stop: { type: 'pct', pct: 10 }, targetR: 2,
+    })
+
+    const t = r.trades[0]
+    expect(t.reason).toBe('target')
+    expect(t.exitPrice).toBe(26)
+    expect(t.rMultiple).toBe(3) // (26 - 20) / 2
   })
 })
 

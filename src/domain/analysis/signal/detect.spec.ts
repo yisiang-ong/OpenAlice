@@ -61,6 +61,16 @@ describe('detectSignalEvents — ma_cross', () => {
     expect(death.events[0].direction).toBe('bearish')
   })
 
+  it('state.activeNow answers the DIRECTION asked: death reads fast BELOW slow', () => {
+    // Decisive downtrend at the end: sma2=7.5 < sma3≈11.67 on the last bar.
+    const down = makeBars([20, 20, 20, 20, 10, 5])
+    const death = detectSignalEvents(down, { type: 'ma_cross', fast: 2, slow: 3, ma: 'sma', direction: 'death' })
+    expect(death.state.activeNow).toBe(true) // the death-cross state IS in effect
+
+    const golden = detectSignalEvents(down, { type: 'ma_cross', fast: 2, slow: 3, ma: 'sma', direction: 'golden' })
+    expect(golden.state.activeNow).toBe(false) // same bars, opposite question
+  })
+
   it('no-cross case: a monotonic series where fast stays above slow never crosses', () => {
     const flat = makeBars([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     const r = detectSignalEvents(flat, { type: 'ma_cross', fast: 2, slow: 3, ma: 'sma' })

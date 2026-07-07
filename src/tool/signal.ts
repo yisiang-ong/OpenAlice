@@ -34,9 +34,9 @@ function isRsiDirection(v: string | undefined): v is 'cross_above' | 'cross_belo
   return v === 'cross_above' || v === 'cross_below'
 }
 
-/** Calendar days to pad BEFORE `start` so every rolling series (MA/RSI/ATR/
- *  rolling-high) has warmed up by the requested start date — same buffer
- *  idiom as simulate.ts (bars-needed × 1.6 to cover weekends/holidays). */
+/** BARS of warm-up each signal type needs before its rolling series (MA/RSI/
+ *  ATR/rolling-high) is defined; `warmupCalendarDays` converts to calendar
+ *  padding for the fetch window. */
 function warmupBars(spec: SignalSpec): number {
   switch (spec.type) {
     case 'ma_cross': return Math.max(spec.fast, spec.slow)
@@ -52,6 +52,29 @@ function defaultStart(daysBack = 365): string {
   const d = new Date()
   d.setUTCDate(d.getUTCDate() - daysBack)
   return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Convert a warm-up requirement in BARS into CALENDAR DAYS of padding for
+ * the given interval. Daily bars use the same ×1.6 weekend/holiday factor as
+ * simulate.ts; weekly/monthly bars span whole calendar weeks/months (a
+ * 200-bar weekly warm-up needs ~4 years, not 320 days); intraday bars pack
+ * many bars into one trading day. Exported for its spec.
+ */
+export function warmupCalendarDays(bars: number, interval: string): number {
+  const m = /^(\d+)?\s*(mo|month|min|m|h|hr|wk|w|week|d|day)/i.exec(interval.trim())
+  const qty = m?.[1] ? Number(m[1]) : 1
+  const unit = (m?.[2] ?? 'd').toLowerCase()
+  let daysPerBar: number
+  switch (unit) {
+    case 'mo': case 'month': daysPerBar = qty * 31; break
+    case 'wk': case 'w': case 'week': daysPerBar = qty * 7; break
+    case 'min': case 'm': daysPerBar = (qty / (6.5 * 60)) * 1.6; break // ~6.5 trading hours/day
+    case 'h': case 'hr': daysPerBar = (qty / 6.5) * 1.6; break
+    default: daysPerBar = qty * 1.6; break // daily
+  }
+  // Floor at one calendar day per request so tiny intraday warm-ups still pad.
+  return Math.max(1, Math.ceil(bars * daysPerBar))
 }
 
 /** Flat tool params → SignalSpec, validating what each signal type needs.
@@ -121,7 +144,7 @@ Signal types (pass \`signal\` + its params):
   high_52w_proximity  withinPct (default 5) — STATE signal: no events; state.activeNow = close within withinPct% of the 252-bar high
   trend_filter        period (default 200) — STATE signal: state.activeNow = close above its SMA(period)
 
-Returns { events, state, barsScanned }. state.activeNow always reflects the LATEST bar (for event types: is the crossing condition true right now; for state types: the actual read). Events are capped at the most recent 50 (note added if truncated). Source: a barId pins one; a bare symbol/query auto-picks the freshest (realtime broker > delayed vendor).`,
+Returns { events, state, barsScanned }. state.activeNow always reflects the LATEST bar (for event types: is the crossed state true right now IN THE DIRECTION ASKED — direction 'death'/'bearish' reads fast-below-slow / macd-below-signal; for state types: the actual read). Events are capped at the most recent 50 (note added if truncated). Source: a barId pins one; a bare symbol/query auto-picks the freshest (realtime broker > delayed vendor).`,
       inputSchema: z.object({
         query: z.string().optional().describe('Symbol/keyword — auto-picks the freshest source. Omit if barId given.'),
         barId: z.string().optional().describe('Pin a source, e.g. "alpaca-paper|XLE". Wins over query.'),
@@ -153,7 +176,7 @@ Returns { events, state, barsScanned }. state.activeNow always reflects the LATE
 
         // Pad the fetch window BEFORE `start` so every rolling series (MA/RSI/
         // ATR/rolling-high) has already warmed up by the requested start date.
-        const bufferDays = Math.ceil((warmupBars(spec) + 10) * 1.6)
+        const bufferDays = warmupCalendarDays(warmupBars(spec) + 10, interval)
         const fetchStart = new Date(`${start}T00:00:00Z`)
         fetchStart.setUTCDate(fetchStart.getUTCDate() - bufferDays)
         const fetchStartStr = fetchStart.toISOString().slice(0, 10)
@@ -244,7 +267,7 @@ Stats are computed over CLOSED trades only (n = closed count; the last trade may
 
         // Warm-up must cover the trigger's rolling series AND the ATR stop.
         const warmup = Math.max(warmupBars(spec), stopType === 'atr' ? (params.atrPeriod ?? 14) : 0)
-        const bufferDays = Math.ceil((warmup + 10) * 1.6)
+        const bufferDays = warmupCalendarDays(warmup + 10, interval)
         const fetchStart = new Date(`${start}T00:00:00Z`)
         fetchStart.setUTCDate(fetchStart.getUTCDate() - bufferDays)
         const fetchStartStr = fetchStart.toISOString().slice(0, 10)

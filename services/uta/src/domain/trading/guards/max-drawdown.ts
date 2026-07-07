@@ -3,6 +3,8 @@ import { resolve } from 'node:path'
 import Decimal from 'decimal.js'
 import { dataPath } from '@/core/paths.js'
 import type { OperationGuard, GuardContext } from './types.js'
+import { isRiskReducingOrder } from './reduce-only.js'
+import { positiveNumberOption } from './options.js'
 
 const DEFAULT_MAX_DRAWDOWN_PCT = 10
 
@@ -17,7 +19,7 @@ export class MaxDrawdownGuard implements OperationGuard {
   private baseDir?: string
 
   constructor(options: Record<string, unknown>) {
-    this.maxDrawdownPct = Number(options.maxDrawdownPct ?? DEFAULT_MAX_DRAWDOWN_PCT)
+    this.maxDrawdownPct = positiveNumberOption(options, 'maxDrawdownPct', DEFAULT_MAX_DRAWDOWN_PCT, this.name)
     this.baseDir = options.baseDir as string | undefined
   }
 
@@ -69,7 +71,10 @@ export class MaxDrawdownGuard implements OperationGuard {
     const drawdownPct = hwm.minus(current).div(hwm).mul(100)
 
     if (drawdownPct.gt(this.maxDrawdownPct)) {
-      return `Account is down ${drawdownPct.toFixed(1)}% from its high-water mark of $${hwm.toFixed(2)} (limit ${this.maxDrawdownPct}%). New entries are blocked until equity recovers — this protects you from digging deeper while in a hole. Closing positions is always allowed.`
+      // Risk-REDUCING orders (an exit against an existing position, no larger
+      // than it) always pass — the guard blocks new risk, never the way out.
+      if (isRiskReducingOrder(ctx)) return null
+      return `Account is down ${drawdownPct.toFixed(1)}% from its high-water mark of $${hwm.toFixed(2)} (limit ${this.maxDrawdownPct}%). New entries are blocked until equity recovers — this protects you from digging deeper while in a hole. Closing or reducing existing positions is always allowed.`
     }
 
     return null

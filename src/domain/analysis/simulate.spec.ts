@@ -68,6 +68,21 @@ describe('simulate', () => {
     expect(r.returnPct).toBe(6)
   })
 
+  it('bracket: a bar that OPENS below the stop fills at the open (gap rule)', async () => {
+    // entry 100, stop 5% -> 95. bar 04-02 gaps open at 88, straight through the stop.
+    const svc = svcOf([
+      { date: '2026-04-01', open: 100, high: 100.5, low: 99.5, close: 100, volume: 1000 },
+      { date: '2026-04-02', open: 88, high: 90, low: 86, close: 89, volume: 1000 },
+    ])
+    const r = ok(await simulate(svc, { barId: 'alpaca|XLE' } as never, {
+      entryDate: '2026-04-01', exit: { type: 'bracket', stopPct: 5, targetPct: 10 },
+    }))
+    expect(r.exit).not.toBeNull()
+    expect(r.exit!.price).toBe(88) // the OPEN, not a flattering fill at the 95 level
+    expect(r.exit!.reason).toMatch(/gapped below/)
+    expect(r.returnPct).toBe(-12) // a real gap loss exceeds the stop percent
+  })
+
   it('bracket exits at the target LEVEL (intrabar high) when hit', async () => {
     // entry 100 on 04-01. stop 5% -> 95, target 10% -> 110.
     // bar 04-02 high 108 (below target), bar 04-03 high 111 (touches target 110), low 106 (no stop).

@@ -68,13 +68,20 @@ For a GBP (or other non-USD) account trading USD instruments, pass equity + curr
           if (!deps.manager) {
             return { error: 'accountId was given but no account manager is configured for this tool — pass equity and currency explicitly instead.' }
           }
+          let rawNetLiquidation: string
           try {
             const uta = await deps.manager.resolveOne(accountId)
             const info = await uta.getAccount()
+            rawNetLiquidation = info.netLiquidation
             resolvedEquity = Number(info.netLiquidation)
             resolvedCurrency = info.baseCurrency
           } catch (err) {
             return { error: `Could not fetch account "${accountId}": ${err instanceof Error ? err.message : String(err)}` }
+          }
+          // The explicit-equity path is zod-validated positive; this path must
+          // be too, or a blank netLiquidation turns every output into "NaN".
+          if (!Number.isFinite(resolvedEquity) || resolvedEquity <= 0) {
+            return { error: `Account "${accountId}" reported a non-positive equity (netLiquidation=${JSON.stringify(rawNetLiquidation)}). Retry when the broker connection is healthy, or pass equity explicitly.` }
           }
         } else if (equity != null) {
           resolvedEquity = equity

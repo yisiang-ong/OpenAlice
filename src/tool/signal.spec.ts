@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createSignalTools } from './signal.js'
+import { createSignalTools, warmupCalendarDays } from './signal.js'
 import type { BarService } from '@/domain/market-data/bars/index'
 import type { OhlcvBar } from '@/domain/market-data/bars/types'
 
@@ -77,8 +77,9 @@ describe('detectSignals tool', () => {
 describe('backtestSignal tool', () => {
   it('happy path: replays the golden cross through a pct bracket and reports stats + capped trades', async () => {
     const { backtestSignal } = createSignalTools(mockSvc())
-    // Golden cross at 2026-06-04 (entry 20, stop 18); the drop to 5 on
-    // 2026-06-07 stops it out at the level for exactly −1R.
+    // Golden cross at 2026-06-04 (entry 20, stop 18); the bar on 2026-06-07
+    // OPENS at 5 — a gap straight through the stop, so the gap rule books the
+    // real fill at the open (−7.5R), not a flattering −1R at the level.
     const r = (await backtestSignal.execute!(
       { query: 'AAPL', signal: 'ma_cross', fast: 2, slow: 3, ma: 'sma', stopType: 'pct', stopPct: 10, targetR: 2 },
       ctx,
@@ -93,9 +94,9 @@ describe('backtestSignal tool', () => {
     expect(r.closedTrades).toBe(1)
     expect(r.trades).toHaveLength(1)
     expect(r.trades[0]).toMatchObject({
-      entryDate: '2026-06-04', exitDate: '2026-06-07', exitPrice: 18, rMultiple: -1, reason: 'stop',
+      entryDate: '2026-06-04', exitDate: '2026-06-07', exitPrice: 5, rMultiple: -7.5, reason: 'stop',
     })
-    expect(r.stats).toMatchObject({ n: 1, winRatePct: 0, expectancyR: -1 })
+    expect(r.stats).toMatchObject({ n: 1, winRatePct: 0, expectancyR: -7.5 })
     expect(r.note).toMatch(/Small sample/)
   })
 
@@ -113,5 +114,29 @@ describe('backtestSignal tool', () => {
     const r = (await backtestSignal.execute!({ query: 'AAPL', signal: 'ma_cross' }, ctx)) as { error: string }
     expect(r.error).toMatch(/ma_cross/)
     expect(r.error).toMatch(/fast and slow/)
+  })
+})
+
+describe('warmupCalendarDays — interval-aware fetch padding', () => {
+  it('daily bars keep the ×1.6 weekend/holiday factor', () => {
+    expect(warmupCalendarDays(200, '1d')).toBe(320)
+  })
+
+  it('weekly bars span whole calendar weeks — a 200-bar warm-up needs ~4 years, not 320 days', () => {
+    expect(warmupCalendarDays(200, '1wk')).toBe(1400)
+  })
+
+  it('monthly bars span whole months', () => {
+    expect(warmupCalendarDays(12, '1mo')).toBe(372)
+  })
+
+  it('intraday bars pack many bars into one trading day (never under one day)', () => {
+    expect(warmupCalendarDays(200, '1h')).toBe(50) // ceil(200 / 6.5 * 1.6)
+    expect(warmupCalendarDays(10, '15m')).toBe(1) // floored at one calendar day
+  })
+
+  it('distinguishes minutes ("1m") from months ("1mo")', () => {
+    expect(warmupCalendarDays(390, '1m')).toBe(2) // one trading day of minute bars ≈ 1.6 days
+    expect(warmupCalendarDays(390, '1mo')).toBe(12090)
   })
 })

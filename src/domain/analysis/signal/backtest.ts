@@ -19,12 +19,15 @@
  * target = entryPrice + targetR × stopDistance (a fixed R-multiple target,
  * not an independent percent — that's the point of quoting size in R).
  *
- * Walking forward uses the SAME intrabar, stop-wins-on-tie semantics as
- * simulate.ts's `bracket` exit rule (see that file's header for the full
- * rationale): from the bar AFTER entry, bar.low <= stopPrice exits AT the
- * stop price (reason 'stop'); else bar.high >= targetPrice exits AT the
- * target price (reason 'target'); if both would touch in the same bar, stop
- * wins (conservative — OHLC alone can't tell us the intrabar path order).
+ * Walking forward uses the SAME intrabar, gap-aware, stop-wins-on-tie
+ * semantics as simulate.ts's `bracket` exit rule (see that file's header for
+ * the full rationale): from the bar AFTER entry, a bar that OPENS beyond a
+ * level fills AT THE OPEN (a gap through the stop books the real, worse
+ * fill — not a flattering fill at the level; a gap above the target books
+ * the better one); otherwise bar.low <= stopPrice exits AT the stop price
+ * (reason 'stop'); else bar.high >= targetPrice exits AT the target price
+ * (reason 'target'); if both would touch in the same bar, stop wins
+ * (conservative — OHLC alone can't tell us the intrabar path order).
  * `maxBars` (default 60) forces a 'time' exit at that bar's CLOSE if neither
  * level is hit first.
  *
@@ -191,6 +194,18 @@ export function backtestSignal(
 
     for (let i = entryIdx + 1; i < n; i++) {
       const b = bars[i]
+      // GAP RULE: a bar that OPENS beyond a level fills AT THE OPEN — the
+      // level no longer exists as a tradeable price. Booking a gapped stop
+      // at the stop level would cap every loss at -1R and flatter the stats
+      // exactly in the crash cases the expectancy number is trusted for.
+      if (b.open <= stopPrice) {
+        exitIdx = i; exitPrice = b.open; reason = 'stop'
+        break
+      }
+      if (b.open >= targetPrice) {
+        exitIdx = i; exitPrice = b.open; reason = 'target'
+        break
+      }
       const hitStop = b.low <= stopPrice
       const hitTarget = b.high >= targetPrice
       if (hitStop) {

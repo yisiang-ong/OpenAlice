@@ -20,11 +20,14 @@
  *     stop level   = entry × (1 − stopPct/100)
  *     target level = entry × (1 + targetPct/100)
  *     Checked from the bar AFTER entry using INTRABAR extremes (not close):
+ *       bar.open <= stop level   → exit AT THE OPEN (gap through the stop
+ *                                  fills at the real, worse price), 'stop'
+ *       bar.open >= target level → exit AT THE OPEN (favorable gap), 'target'
  *       bar.low  <= stop level   → exit AT THE STOP LEVEL,   reason 'stop'
  *       bar.high >= target level → exit AT THE TARGET LEVEL, reason 'target'
- *     If a single bar touches BOTH levels, the STOP WINS (conservative —
- *     we don't know intrabar path order from OHLC alone, so assume the worse
- *     outcome rather than credit an ambiguous target fill).
+ *     If a single bar touches BOTH levels intrabar, the STOP WINS
+ *     (conservative — we don't know intrabar path order from OHLC alone, so
+ *     assume the worse outcome rather than credit an ambiguous target fill).
  *     maxBars: if neither level is hit within N bars past entry, exit at that
  *     bar's CLOSE, reason 'time'.
  *   The other four rules are intentionally close-only (matches "would a
@@ -165,13 +168,21 @@ export async function simulate(
       case 'hold':
         break
       case 'bracket': {
-        // Intrabar, stop-wins-on-tie semantics — see file header. Distinct
-        // from stop/target above (which are close-based).
+        // Intrabar, gap-aware, stop-wins-on-tie semantics — see file header.
+        // Distinct from stop/target above (which are close-based).
         const stopLevel = entryPrice * (1 - rule.stopPct / 100)
         const targetLevel = entryPrice * (1 + rule.targetPct / 100)
         const hitStop = b.low <= stopLevel
         const hitTarget = b.high >= targetLevel
-        if (hitStop) {
+        // A bar that OPENS beyond a level fills at the open — the level no
+        // longer exists as a tradeable price (gap rule, matches backtest.ts).
+        if (b.open <= stopLevel) {
+          reason = `open ${px(b.open)} gapped below the −${rule.stopPct}% stop at ${px(stopLevel)}; filled at the open`
+          exitPriceThisBar = b.open
+        } else if (b.open >= targetLevel) {
+          reason = `open ${px(b.open)} gapped above the +${rule.targetPct}% target at ${px(targetLevel)}; filled at the open`
+          exitPriceThisBar = b.open
+        } else if (hitStop) {
           reason = `low ${px(b.low)} hit −${rule.stopPct}% stop at ${px(stopLevel)}`
           exitPriceThisBar = stopLevel
         } else if (hitTarget) {

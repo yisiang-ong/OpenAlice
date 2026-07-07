@@ -160,9 +160,13 @@ export function detectSignalEvents(bars: DetectBar[], spec: SignalSpec): DetectR
     const values: Record<string, number> = {}
     put(values, fastCtxKey, lf)
     put(values, slowCtxKey, ls)
+    // activeNow answers the DIRECTION the caller asked about: for 'death',
+    // "is the death-cross state (fast below slow) in effect now"; for
+    // 'golden'/'both', the golden state (fast above slow).
+    const activeNow = lf != null && ls != null && (direction === 'death' ? lf < ls : lf > ls)
     return {
       events,
-      state: { activeNow: lf != null && ls != null && lf > ls, asOfDate, values },
+      state: { activeNow, asOfDate, values },
       barsScanned: n,
     }
   }
@@ -231,9 +235,11 @@ export function detectSignalEvents(bars: DetectBar[], spec: SignalSpec): DetectR
     const values: Record<string, number> = {}
     put(values, 'macd', lm)
     put(values, 'macdSignal', ls)
+    // activeNow answers the DIRECTION the caller asked about — see ma_cross.
+    const activeNow = lm != null && ls != null && (direction === 'bearish' ? lm < ls : lm > ls)
     return {
       events,
-      state: { activeNow: lm != null && ls != null && lm > ls, asOfDate, values },
+      state: { activeNow, asOfDate, values },
       barsScanned: n,
     }
   }

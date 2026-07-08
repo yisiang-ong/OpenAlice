@@ -45,11 +45,15 @@ even when you (or the agent) get excited.
    guide is built around — `trade-idea`, `trade-mentor`,
    `daily-briefing` — ship bundled in the chat workspace template, so the
    agent in that workspace already knows the procedures.
-3. **Connect a paper account.** In Settings, add a demo/paper broker
-   account (Alpaca paper is the easiest). **Do not connect a live funded
-   account yet** — Section 8 defines what "yet" means.
-4. **Add the beginner guard rails** to that account's config
-   (Settings → account guards, stored in `accounts.json`):
+3. **Connect a paper account.** In **Settings → Trading**, add a
+   demo/paper broker account (Alpaca paper is the easiest). **Do not
+   connect a live funded account yet** — Section 8 defines what "yet"
+   means.
+4. **Add the beginner guard rails.** Guards live on the account itself,
+   not on a separate settings page: in **Settings → Trading**, open your
+   account's edit dialog and expand its collapsible **Guards** section
+   (it shows a count, e.g. *Guards (0)*). Add these three (stored in
+   `accounts.json`):
 
    ```json
    "guards": [
@@ -280,7 +284,11 @@ Being honest about the boundary is part of the education:
 
 ---
 
-*Further reading in this repo: [`docs/trade-cards.md`](trade-cards.md)
+*Further reading in this repo:
+[`docs/beginner-trading-walkthrough.md`](beginner-trading-walkthrough.md)
+(the end-to-end product walkthrough — which tab to look at, what happens
+on screen when a trade executes, and how to read the Portfolio dashboard),
+[`docs/trade-cards.md`](trade-cards.md)
 (the feature map and architecture), and the skill definitions themselves
 in [`default/skills/trade-idea/`](../default/skills/trade-idea/SKILL.md),
 [`trade-mentor/`](../default/skills/trade-mentor/SKILL.md), and

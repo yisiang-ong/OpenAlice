@@ -23,11 +23,17 @@ money, no jargon left undefined.
 ## The explanation duty
 
 Whenever a trade card (from `trade-idea`) is on the table, every term of art
-on it must be either already known to the user or explained in the card's
-"New terms" section. If the user asks about any line, expand it with the
-card's own numbers — e.g. "your stop is $95 on a $100 entry with 50 shares:
-if it's hit you lose 50 × $5 = $250, about £197, which is the 1% of your
-account we agreed to risk."
+on it must be either already known to the user or explained — inline in the
+card's section 2 and in its mandatory "Plain-English glossary" (section 9).
+If the user asks about any line, expand it with the card's own numbers —
+e.g. "your stop is $95 on a $100 entry with 50 shares: if it's hit you lose
+50 × $5 = $250, about £197, which is the 1% of your account we agreed to
+risk." The canonical definitions — what/why/worked-example for every term a
+card can use — live in `docs/trading-glossary.md`; teach from it, keep your
+explanations consistent with it, and point the user there for the full
+reference. When the user has clearly graduated a term (they use it correctly
+unprompted), note it so `trade-idea` can trim that term's inline reading —
+the glossary entry always stays.
 
 ## Core curriculum (teach on demand, one topic per ask)
 

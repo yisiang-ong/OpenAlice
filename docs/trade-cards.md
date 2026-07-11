@@ -17,7 +17,7 @@ user always pushes.
 | Enforced risk guards | `max-drawdown` (blocks new entries beyond N% below the account's high-water mark; exits always pass) and `daily-loss-limit` (blocks new entries after an N% down day) join the existing guard pipeline | `services/uta/src/domain/trading/guards/{max-drawdown,daily-loss-limit}.ts` |
 | Orchestration | `trade-idea` skill — the research-to-order procedure ending in the TRADE CARD template and a journal entry; "no trade" is a first-class verdict | `default/skills/trade-idea/SKILL.md` |
 | Education | `trade-mentor` skill — beginner explanations in the account's own £ numbers, risk curriculum, journal-review protocol; every card is self-teaching (plain-English summary + inline metric readings + mandatory glossary, "no naked jargon" rule) backed by a standing glossary | `default/skills/trade-mentor/SKILL.md`, `default/skills/trade-idea/SKILL.md`, `docs/trading-glossary.md` |
-| Automation | `daily-briefing` skill — scheduled pre-open Inbox briefing: landmines, open-position review vs journaled stops, guard/heat status, ≤2 fresh cards | `default/skills/daily-briefing/SKILL.md` |
+| Automation | `daily-briefing` skill — scheduled pre-open Inbox briefing: plain-English summary line, landmines, open-position review vs journaled stops (R-distance with plain readings), guard/heat status, ≤2 fresh cards; same "no naked jargon" rule as the card | `default/skills/daily-briefing/SKILL.md` |
 
 All three skills ship in the chat workspace template
 (`src/workspaces/templates/chat/template.json` → `bundledSkills`).

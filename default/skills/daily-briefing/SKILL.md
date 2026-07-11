@@ -36,13 +36,16 @@ watchlist name reporting within 5 trading days. Lead the briefing with these
 `status: open` file in `journal/trades/` (convention in `trade-idea`):
 
 - `alice-uta contract quote` — where is price vs the journaled stop and
-  targets? Report distance in R (price − entry, divided by entry − stop).
+  targets? Report distance in R (price − entry, divided by entry − stop),
+  **with a plain reading** — e.g. "+0.6R (up about £118 of the way to your
+  first target; stop still $93.60, ~1.4R below)".
 - `alice analysis signals` with `trend_filter` — is the setup's regime
-  still intact?
-- Recommend, don't act: **ratchet the stop** (e.g. to breakeven after
-  +1R, or trail below a rising MA), **take partial at target**, **exit**
-  (regime broken), or **hold as planned**. Each recommendation cites its
-  evidence and states the order the user would place.
+  still intact? Say it plainly: "still above its trend line" / "trend broke".
+- Recommend, don't act: **ratchet the stop** (move it up to lock in gains —
+  e.g. to breakeven after +1R, or trail below a rising average), **take
+  partial at target**, **exit** (regime broken), or **hold as planned**.
+  Each recommendation cites its evidence, states the order the user would
+  place, AND says in one plain clause *why* — no bare jargon.
 - Position in the journal but not the portfolio (stopped out overnight)
   → mark the journal entry `closed`, note realized R, flag it for a
   `trade-mentor` review.
@@ -51,9 +54,12 @@ watchlist name reporting within 5 trading days. Lead the briefing with these
 
 From `alice-uta account info` + the journal: current equity, drawdown from
 recent high, portfolio heat (Σ open `riskUsd`) vs the 5% cap, and headroom
-under the max-drawdown / daily-loss guards. If a guard is close (within a
-third of its limit), say so plainly — the user should never be surprised by
-a guard rejection.
+under the max-drawdown / daily-loss guards. Each number gets a plain reading:
+"heat 2.4% of the 5% cap (if every position stopped out today you'd lose
+2.4%)"; "3% below your high-water mark — the max-drawdown guard blocks new
+buys at 10%, so you have room". If a guard is close (within a third of its
+limit), say so plainly — the user should never be surprised by a guard
+rejection.
 
 ### 4. Fresh candidates (optional, capped)
 
@@ -61,14 +67,54 @@ Only if the book has risk headroom: run the `trade-idea` skill on the
 watchlist / `traderhub board rotation` leaders. **At most 1–2 cards**, and
 WATCH/NO TRADE verdicts are fine. No headroom → skip and say why.
 
-### 5. Push ONE briefing
+### 5. Emit the briefing (this shape) + push ONE
 
-Write the briefing to a dated file (`briefings/<YYYY-MM-DD>.md`) and
+Write to a dated file (`briefings/<YYYY-MM-DD>.md`) and
 `alice-uta inbox push --doc <file> --comments "<two-line summary>"`.
 
-**Quiet-day rule:** nothing actionable → the briefing is three lines
-(clock, book unchanged, no setups), not filler. Respect the reader's
-attention or lose it.
+```
+# Morning briefing — <date>
+
+In plain English — <1–2 sentences a beginner fully gets: is today risky,
+                    how do my positions stand, is there anything to do.
+                    E.g. "Quiet open, no data due. Your one position (NVDA)
+                    is +0.6R and healthy — nothing to do. No new setups
+                    worth taking today.">
+
+## ⚠️ Landmines today
+<CPI / FOMC / payrolls / earnings within 5 days on your names — or
+ "none scheduled">
+
+## Your positions
+<per open trade: TICKER — R-distance WITH plain reading, regime in plain
+ words, and → Recommendation (hold / ratchet / partial / exit) + why.
+ "No open positions" if flat.>
+
+## Account health
+- Equity £<x> — <drawdown> below your high-water mark (<plain reading>)
+- Portfolio heat <h>% of the 5% cap (<what you'd lose if all stopped at once>)
+- Guard headroom: <how close to any limit, plainly — or "comfortable">
+
+## New ideas
+<0–2 trade cards if there's risk headroom; WATCH/NO TRADE fine — or
+ "no fresh setups / no risk headroom, skipping and here's why">
+
+Terms used: <one-line plain gloss of any term of art in THIS briefing —
+R, heat, drawdown, high-water mark, ratchet…>. Full glossary:
+docs/trading-glossary.md
+```
+
+**No naked jargon (same rule as the trade card).** A beginner reads the
+briefing over breakfast and understands where they stand and what (if
+anything) to do — without looking anything up. Every R-figure, heat %,
+drawdown, and "ratchet/regime/partial" carries a plain reading; the Terms
+line catches the rest. This is a daily-read surface, so the bar is *higher*
+than the card, not lower.
+
+**Quiet-day rule (still holds):** nothing actionable → the briefing is the
+Plain-English line + three lines (clock, book unchanged, no setups), not
+filler. Brevity and plainness are not in tension — a short briefing is still
+fully readable by a beginner. Respect the reader's attention or lose it.
 
 ## Scheduling this (one-time setup)
 

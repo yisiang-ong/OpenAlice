@@ -16,7 +16,7 @@ user always pushes.
 | Position sizing | `positionSize` — fixed-fractional risk (default 1%/trade, hard error above 2%), position-% cap, portfolio-heat cap, optional fractional-Kelly cap; account-currency aware (GBP account trading USD instruments shows risk in both £ and $) | `src/domain/trading-plan/position-size.ts`, tool `src/tool/position-size.ts`, CLI `alice-uta plan size` |
 | Enforced risk guards | `max-drawdown` (blocks new entries beyond N% below the account's high-water mark; exits always pass) and `daily-loss-limit` (blocks new entries after an N% down day) join the existing guard pipeline | `services/uta/src/domain/trading/guards/{max-drawdown,daily-loss-limit}.ts` |
 | Orchestration | `trade-idea` skill — the research-to-order procedure ending in the TRADE CARD template and a journal entry; "no trade" is a first-class verdict | `default/skills/trade-idea/SKILL.md` |
-| Education | `trade-mentor` skill — beginner explanations in the account's own £ numbers, risk curriculum, journal-review protocol | `default/skills/trade-mentor/SKILL.md` |
+| Education | `trade-mentor` skill — beginner explanations in the account's own £ numbers, risk curriculum, journal-review protocol; every card is self-teaching (plain-English summary + inline metric readings + mandatory glossary, "no naked jargon" rule) backed by a standing glossary | `default/skills/trade-mentor/SKILL.md`, `default/skills/trade-idea/SKILL.md`, `docs/trading-glossary.md` |
 | Automation | `daily-briefing` skill — scheduled pre-open Inbox briefing: landmines, open-position review vs journaled stops, guard/heat status, ≤2 fresh cards | `default/skills/daily-briefing/SKILL.md` |
 
 All three skills ship in the chat workspace template

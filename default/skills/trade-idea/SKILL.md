@@ -129,26 +129,52 @@ and which cap bound the size. It is advisory — guards re-check at push time.
 ## TRADE CARD — <TICKER> LONG            <date>
 Verdict: TRADE | NO TRADE | WATCH (trigger: <exact condition>)
 
-1. Setup & entry   — <signal name>, fired <date> (<context values>);
+Plain English — <ONE sentence a beginner fully gets: what we'd do, why,
+                 what we risk to make what, and when we bail. E.g. "Buy NVDA
+                 because it just broke into an uptrend on above-average
+                 volume; risk £197 aiming for £394, and get out if it closes
+                 below $93.60.">
+
+1. Setup & entry   — <signal in plain words>, fired <date> (<what happened>);
                      entry zone <range>
-2. Quant evidence  — RSI, ATR, RVOL, z-score, % from 52w high (dated)
-3. Historical edge — n=<n> since <year>: <win>% win, avg <avgR>R,
-                     expectancy <E>R, worst streak <k> losses
+2. Quant evidence  — each metric WITH a plain reading in parentheses, e.g.:
+                     • RSI <v> (momentum firm, not yet overbought >70)
+                     • ATR $<v> (typical daily swing — sets the stop distance)
+                     • RVOL <v> (<x>% more volume than usual → real interest)
+                     • <v>% below 52-week high (near the top of its range)
+3. Historical edge — of the last <n> times this setup fired since <year>,
+                     <win>% made money; average result +<avgR>R (it earned
+                     <avgR>× what it risked per trade — expectancy <E>R);
+                     worst losing streak <k> in a row.
                      <small-sample note verbatim if present>
-4. Macro           — <tailwind|headwind|neutral>: <2–3 board datapoints>
-5. Positioning     — <crowded|hated|ignored>: short interest, insiders,
-                     revisions, narrative one-liner
+4. Macro           — <tailwind|headwind|neutral> (is the whole market at this
+                     trade's back or in its face?): <2–3 datapoints>
+5. Positioning     — <crowded|hated|ignored> (who else is already in this?):
+                     short interest, insiders, revisions, one-line narrative
 6. Risk plan (<equity> account)
-                   — qty <q> @ <entry>, stop <stop> (<basis>),
-                     targets <T1/T2/T3> (R:R <r> at T1),
-                     risk £<x> / $<y> = <z>% of equity,
-                     portfolio heat after: <h>%
-7. What invalidates this — 2–3 falsifiable conditions (price level,
-                     signal reversal, thesis event)
+                   — buy <q> shares @ <entry>; stop-loss <stop> (<basis>);
+                     targets <T1/T2/T3> — at the first you'd make <r>× your
+                     risk (R:R <r>);
+                     you risk £<x> / $<y> = <z>% of the account;
+                     total open risk after this: <h>% (cap 5%)
+7. What invalidates this — 2–3 concrete things that would prove it wrong
+                     (a price level, the signal flipping, a thesis event)
 8. Confidence      — low|med|high, and the ONE thing that would change it
-9. New terms       — one-line beginner definition of every term of art
-                     used above (R-multiple, expectancy, ATR, RVOL, heat…)
+9. Plain-English glossary — MANDATORY, never omitted. Define EVERY term of
+                     art the card uses, one line each, with THIS card's
+                     numbers plugged in (R-multiple, expectancy, stop, ATR,
+                     RVOL, RSI, z-score, R:R, portfolio heat…). Point to the
+                     full reference: docs/trading-glossary.md.
 ```
+
+**No naked jargon (hard rule).** Every technical term appears with a plain
+reading at first use (section 2) AND is defined in the glossary (section 9).
+The test: a smart friend with zero finance background reads the card top to
+bottom and understands the verdict *without asking you or looking anything
+up*. If they couldn't, the card isn't finished — this is not optional
+polish, it is the point of the card. (As the user demonstrably owns a term —
+the `trade-mentor` journal tracks this — the inline reading for it may be
+trimmed; the glossary entry stays.)
 
 Every number on the card must have come out of a tool call in this run — no
 recalled statistics, no vibes.

@@ -90,8 +90,12 @@ made to follow at a desk:
 | Macro & positioning | One paragraph: is the macro wind at this trade's back or in its face? Is the name crowded, hated, or ignored? | market boards, short interest, insiders |
 | **Sizing** | Computes quantity from your equity so the stop costs ~1% of the account, capped by position size and total portfolio heat | `positionSize` |
 
-The output is a **TRADE CARD** — nine numbered lines ending with a "New
-terms" section that defines every piece of jargon used above it. Or,
+The output is a **TRADE CARD** — a one-line plain-English summary on top,
+nine numbered lines where every metric carries a plain reading in
+parentheses, and a mandatory glossary at the bottom defining every term of
+art in the card's own numbers (the full reference lives in
+[`trading-glossary.md`](trading-glossary.md)). By rule, a card you can't
+understand top to bottom without looking anything up isn't finished. Or,
 very often, the output is:
 
 > **Verdict: NO TRADE** (or **WATCH**, with the exact trigger that would
@@ -116,19 +120,36 @@ approve, the stop from the card is placed **broker-side** with the order
 ```
 ## TRADE CARD — NVDA LONG                        2026-07-06
 Verdict: TRADE
-1. Setup & entry   — ma_cross 20/50, fired 2026-07-01 (RVOL 2.1); entry 98–101
-2. Quant evidence  — RSI 61, ATR 3.2, RVOL 1.8, z +1.1, 4% from 52w high
-3. Historical edge — n=14 since 2021: 57% win, avg +0.8R, expectancy +0.31R
-4. Macro           — tailwind: rates paused, dollar soft, sentiment neutral
-5. Positioning     — ignored: SI 1.2%, insiders quiet, estimates drifting up
+
+Plain English — Buy NVDA: it just broke into an uptrend on above-average
+                volume. Risk £197 aiming for £394, and get out if it closes
+                below $93.60.
+
+1. Setup & entry   — 20-day average crossed above the 50-day (an uptrend
+                     starting), fired 2026-07-01 on heavy volume; entry 98–101
+2. Quant evidence  — RSI 61 (momentum firm, not overbought >70);
+                     ATR $3.20 (typical daily swing — sets the stop);
+                     RVOL 1.8 (80% more volume than usual → real interest);
+                     4% below its 52-week high (near the top of its range)
+3. Historical edge — of the last 14 times this setup fired since 2021, 57%
+                     made money; average +0.8R (earned 0.8× the risk per
+                     trade — expectancy +0.31R); worst streak 3 losses
+4. Macro           — tailwind (market at its back): rates paused, dollar
+                     soft, sentiment neutral
+5. Positioning     — ignored (no crowd either way): short interest 1.2%,
+                     insiders quiet, analyst estimates drifting up
 6. Risk plan (£20,000 account)
-                   — qty 50 @ 100.00, stop 93.60 (ATR×2),
-                     targets 106.4/112.8 (R:R 2.0 at T1),
-                     risk £197 / $250 = 1.0% of equity, heat after: 2.4%
-7. What invalidates — close below 93.60; EMA20 back under EMA50; guidance cut
+                   — buy 50 shares @ 100.00; stop-loss 93.60 (2× ATR);
+                     targets 106.4/112.8 — at the first you make 2× your
+                     risk (R:R 2.0);
+                     you risk £197 / $250 = 1.0% of the account;
+                     total open risk after: 2.4% (cap 5%)
+7. What invalidates — closes below 93.60; the 20-day drops back under the
+                     50-day; an earnings guidance cut
 8. Confidence      — med; earnings 2026-08-27 is the one thing to watch
-9. New terms       — R-multiple: profit/loss measured in units of what you
-                     risked. Expectancy: average R per trade. ATR: …
+9. Glossary        — R-multiple: profit/loss in units of what you risked
+                     (here 1R = £197). Expectancy: average R per trade.
+                     ATR: typical daily swing. … (full: trading-glossary.md)
 ```
 
 The lines to spend your attention on, in order of importance:
@@ -285,6 +306,8 @@ Being honest about the boundary is part of the education:
 ---
 
 *Further reading in this repo:
+[`docs/trading-glossary.md`](trading-glossary.md) (every term of art a card
+can use — plain definition, why it matters, worked example in £/$),
 [`docs/beginner-trading-walkthrough.md`](beginner-trading-walkthrough.md)
 (the end-to-end product walkthrough — which tab to look at, what happens
 on screen when a trade executes, and how to read the Portfolio dashboard),

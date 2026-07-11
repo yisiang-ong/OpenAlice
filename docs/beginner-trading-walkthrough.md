@@ -56,8 +56,11 @@ recalled from the model's memory.
 You get a TRADE CARD ending in a verdict. Reading order for a beginner:
 **line 6 first** (what do I lose if wrong — should be ~1% of equity), then
 **line 3** (the measured edge), then **line 7** (what proves it wrong).
-Full line-by-line literacy is in the
-[Beginner Guide §4](beginner-trader-guide.md#4-how-to-read-a-trade-card-line-by-line).
+Every card carries a one-line plain-English summary on top, a plain reading
+next to each metric, and a glossary at the bottom — so you should be able to
+read it end to end without looking anything up. Full line-by-line literacy is
+in the [Beginner Guide §4](beginner-trader-guide.md#4-how-to-read-a-trade-card-line-by-line);
+every term is defined in [`trading-glossary.md`](trading-glossary.md).
 
 ### Step 3 — Decide. Three paths:
 

@@ -127,6 +127,11 @@ briefing an hour before the US open"*) one document lands in your Inbox:
   take a partial, or exit,
 - account risk status: drawdown, portfolio heat, guard headroom.
 
+Like the trade card, the briefing opens with a **plain-English line** (is
+today risky, how do my positions stand, anything to do), every risk number
+carries a plain reading, and a Terms line + [`trading-glossary.md`](trading-glossary.md)
+catch any jargon — so it's readable over breakfast without looking anything up.
+
 **Recommendations only.** If it says "ratchet the stop to breakeven" and
 you agree, tell the workspace to do it — the change is staged and goes
 through the same Trading-as-Git push as everything else. If you disagree,
